@@ -2,7 +2,7 @@ import PackagePlugin
 import Foundation
 
 private func readIncludefile(workingDirectory: Path) throws -> [String] {
-    let includefilePath = workingDirectory.appending("Includefile")
+    let includefilePath = workingDirectory.appending(".inject").appending("Includefile")
     guard let content = try? String(contentsOfFile: includefilePath.string, encoding: .utf8) else {
         return []
     }
@@ -12,7 +12,7 @@ private func readIncludefile(workingDirectory: Path) throws -> [String] {
 }
 
 private func readImportfile(workingDirectory: Path) throws -> [String] {
-    let importfilePath = workingDirectory.appending("Importfile")
+    let importfilePath = workingDirectory.appending(".inject").appending("Importfile")
     guard let content = try? String(contentsOfFile: importfilePath.string, encoding: .utf8) else {
         return []
     }
