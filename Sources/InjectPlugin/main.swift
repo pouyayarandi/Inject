@@ -8,6 +8,7 @@ struct Binding {
     let type: String
     let implementation: String
     let location: SourceLocation
+    let isSingleton: Bool
 }
 
 struct InjectedDependency {
@@ -34,10 +35,17 @@ class DependencyVisitor: SyntaxVisitor {
                 type = firstArg.expression.description.replacingOccurrences(of: ".self", with: "")
             }
             
+            // Check if @Singleton is present
+            let isSingleton = node.attributes.contains(where: { attr in
+                guard case let .attribute(attribute) = attr.trimmed else { return false }
+                return attribute.attributeName.description == "Singleton"
+            })
+            
             bindings.append(Binding(
                 type: type,
                 implementation: implementation,
-                location: node.startLocation(converter: SourceLocationConverter(fileName: "", tree: node.root))
+                location: node.startLocation(converter: SourceLocationConverter(fileName: "", tree: node.root)),
+                isSingleton: isSingleton
             ))
         }
         return .visitChildren
@@ -120,7 +128,7 @@ func generateContainerCode(bindings: [Binding]) -> String {
     """
     
     for binding in bindings {
-        code += "        register(\(binding.type).self) { \(binding.implementation)() }\n"
+        code += "        register(\(binding.type).self, isSingleton: \(binding.isSingleton)) { \(binding.implementation)() }\n"
     }
     
     code += """
