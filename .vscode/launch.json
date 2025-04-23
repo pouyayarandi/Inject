@@ -1,0 +1,22 @@
+{
+	"configurations": [
+		{
+			"type": "swift",
+			"request": "launch",
+			"args": [],
+			"cwd": "${workspaceFolder:Inject}",
+			"name": "Debug InjectPlugin",
+			"program": "${workspaceFolder:Inject}/.build/debug/InjectPlugin",
+			"preLaunchTask": "swift: Build Debug InjectPlugin"
+		},
+		{
+			"type": "swift",
+			"request": "launch",
+			"args": [],
+			"cwd": "${workspaceFolder:Inject}",
+			"name": "Release InjectPlugin",
+			"program": "${workspaceFolder:Inject}/.build/release/InjectPlugin",
+			"preLaunchTask": "swift: Build Release InjectPlugin"
+		}
+	]
+}
