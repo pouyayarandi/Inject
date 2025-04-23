@@ -1,6 +1,41 @@
 import PackagePlugin
 import Foundation
 
+private func readIncludefile(workingDirectory: Path) throws -> [String] {
+    let includefilePath = workingDirectory.appending("Includefile")
+    guard let content = try? String(contentsOfFile: includefilePath.string, encoding: .utf8) else {
+        return []
+    }
+    return content.components(separatedBy: .newlines)
+        .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        .filter { !$0.isEmpty && !$0.hasPrefix("#") }
+}
+
+private func readImportfile(workingDirectory: Path) throws -> [String] {
+    let importfilePath = workingDirectory.appending("Importfile")
+    guard let content = try? String(contentsOfFile: importfilePath.string, encoding: .utf8) else {
+        return []
+    }
+    return content.components(separatedBy: .newlines)
+        .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        .filter { !$0.isEmpty && !$0.hasPrefix("#") }
+}
+
+private func findSwiftFiles(in directory: Path) throws -> [Path] {
+    let fileManager = FileManager.default
+    var swiftFiles: [Path] = []
+    
+    if let enumerator = fileManager.enumerator(atPath: directory.string) {
+        while let filePath = enumerator.nextObject() as? String {
+            if filePath.hasSuffix(".swift") {
+                swiftFiles.append(directory.appending(filePath))
+            }
+        }
+    }
+    
+    return swiftFiles
+}
+
 @main
 struct InjectGeneratorPlugin: BuildToolPlugin {
     func createBuildCommands(context: PluginContext, target: Target) async throws -> [Command] {
@@ -14,8 +49,19 @@ struct InjectGeneratorPlugin: BuildToolPlugin {
         // Output file path in the build directory
         let outputFilePath = outputDir.appending("Container+Generated.swift")
         
-        // Get all Swift source files
-        let sourceFiles = target.sourceModule?.sourceFiles.map(\.path) ?? []
+        // Get target source files
+        var sourceFiles = target.sourceModule?.sourceFiles.map(\.path) ?? []
+        
+        // Read paths from Includefile and append additional source files
+        let includePaths = try readIncludefile(workingDirectory: target.directory)
+        for relativePath in includePaths {
+            let absolutePath = target.directory.appending(relativePath)
+            sourceFiles.append(contentsOf: try findSwiftFiles(in: absolutePath))
+        }
+        
+        // Read imports from Importfile
+        let imports = try readImportfile(workingDirectory: target.directory)
+        
         let sourceDirs = Set(sourceFiles.map { $0.removingLastComponent() })
         
         // Create the command
@@ -25,7 +71,8 @@ struct InjectGeneratorPlugin: BuildToolPlugin {
                 executable: injectPlugin.path,
                 arguments: [
                     "--source-dirs", sourceDirs.map(\.string).joined(separator: ","),
-                    "--output", outputFilePath.string
+                    "--output", outputFilePath.string,
+                    "--imports", imports.joined(separator: ",")
                 ],
                 inputFiles: sourceFiles,
                 outputFiles: [outputFilePath]
@@ -49,9 +96,22 @@ extension InjectGeneratorPlugin: XcodeBuildToolPlugin {
         // Output file path in the build directory
         let outputFilePath = outputDir.appending("Container+Generated.swift")
         
-        // Get all Swift source files
-        let sourceFiles = target.inputFiles.filter { $0.type == .source && $0.path.extension == "swift" }
-        let sourceDirs = Set(sourceFiles.map { $0.path.removingLastComponent() })
+        // Get target source files
+        var sourceFiles = target.inputFiles
+            .filter { $0.type == .source && $0.path.extension == "swift" }
+            .map(\.path)
+        
+        // Read paths from Injectfile and append additional source files
+        let includePaths = try readIncludefile(workingDirectory: context.xcodeProject.directory)
+        for relativePath in includePaths {
+            let absolutePath = context.xcodeProject.directory.appending(relativePath)
+            sourceFiles.append(contentsOf: try findSwiftFiles(in: absolutePath))
+        }
+        
+        // Read imports from Importfile
+        let imports = try readImportfile(workingDirectory: context.xcodeProject.directory)
+        
+        let sourceDirs = Set(sourceFiles.map { $0.removingLastComponent() })
         
         return [
             .buildCommand(
@@ -59,9 +119,10 @@ extension InjectGeneratorPlugin: XcodeBuildToolPlugin {
                 executable: injectPlugin.path,
                 arguments: [
                     "--source-dirs", sourceDirs.map(\.string).joined(separator: ","),
-                    "--output", outputFilePath.string
+                    "--output", outputFilePath.string,
+                    "--imports", imports.joined(separator: ",")
                 ],
-                inputFiles: sourceFiles.map(\.path),
+                inputFiles: sourceFiles,
                 outputFiles: [outputFilePath]
             )
         ]

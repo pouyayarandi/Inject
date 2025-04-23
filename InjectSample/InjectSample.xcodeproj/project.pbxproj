@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		8322B8E22DB8CD5300C601B8 /* Inject in Frameworks */ = {isa = PBXBuildFile; productRef = 8322B8E12DB8CD5300C601B8 /* Inject */; };
 		837BA3032DB8DE5A001DC233 /* Inject in Frameworks */ = {isa = PBXBuildFile; productRef = 837BA3022DB8DE5A001DC233 /* Inject */; };
+		839FA9682DB9290200927753 /* MyLibrary in Frameworks */ = {isa = PBXBuildFile; productRef = 839FA9672DB9290200927753 /* MyLibrary */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +42,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				839FA9682DB9290200927753 /* MyLibrary in Frameworks */,
 				8322B8E22DB8CD5300C601B8 /* Inject in Frameworks */,
 				837BA3032DB8DE5A001DC233 /* Inject in Frameworks */,
 			);
@@ -88,6 +90,7 @@
 			packageProductDependencies = (
 				8322B8E12DB8CD5300C601B8 /* Inject */,
 				837BA3022DB8DE5A001DC233 /* Inject */,
+				839FA9672DB9290200927753 /* MyLibrary */,
 			);
 			productName = InjectSample;
 			productReference = 8322B8C82DB8CD3600C601B8 /* InjectSample.app */;
@@ -119,6 +122,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				837BA3012DB8DE5A001DC233 /* XCLocalSwiftPackageReference "../../Inject" */,
+				839FA9662DB9290200927753 /* XCLocalSwiftPackageReference "MyLibrary" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 8322B8C92DB8CD3600C601B8 /* Products */;
@@ -361,6 +365,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../../Inject;
 		};
+		839FA9662DB9290200927753 /* XCLocalSwiftPackageReference "MyLibrary" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = MyLibrary;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -376,6 +384,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 837BA3012DB8DE5A001DC233 /* XCLocalSwiftPackageReference "../../Inject" */;
 			productName = "plugin:InjectGenerator";
+		};
+		839FA9672DB9290200927753 /* MyLibrary */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MyLibrary;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -4,7 +4,7 @@ import SwiftParser
 import ArgumentParser
 
 // Model to store binding information
-struct Binding {
+struct Binding: Hashable {
     let type: String
     let implementation: String
     let location: SourceLocation
@@ -118,8 +118,16 @@ struct ValidationError: Error, CustomStringConvertible {
 }
 
 // Generate container code
-func generateContainerCode(bindings: [Binding]) -> String {
-    var code = """
+func generateContainerCode(bindings: [Binding], imports: [String]) -> String {
+    var code = ""
+    
+    // Add custom imports
+    for importStatement in imports {
+        code += "import \(importStatement)\n"
+    }
+    
+    // Add default imports
+    code += """
     import Inject
     
     extension AppContainer {
@@ -127,7 +135,7 @@ func generateContainerCode(bindings: [Binding]) -> String {
     
     """
     
-    for binding in bindings {
+    for binding in Set<Binding>(bindings) {
         code += "        register(\(binding.type).self, isSingleton: \(binding.isSingleton)) { \(binding.implementation)() }\n"
     }
     
@@ -152,15 +160,19 @@ struct GenerateCommand: ParsableCommand {
     @Option(name: .long, help: "Output file path")
     var output: String
     
+    @Option(name: .long, help: "Comma-separated list of imports")
+    var imports: String = ""
+    
     func run() throws {
         let directories = sourceDirs.split(separator: ",").map(String.init)
+        let importStatements = imports.isEmpty ? [] : imports.split(separator: ",").map(String.init)
 
         let (bindings, injections) = try parseSourceFiles(in: directories)
 
         // Validate all dependencies are properly bound
         try validateDependencies(bindings: bindings, injections: injections)
 
-        let generatedCode = generateContainerCode(bindings: bindings)
+        let generatedCode = generateContainerCode(bindings: bindings, imports: importStatements)
         try generatedCode.write(toFile: output, atomically: true, encoding: .utf8)
     }
 }

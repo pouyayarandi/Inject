@@ -7,6 +7,7 @@
 
 import UIKit
 import Inject
+import MyLibrary
 
 protocol MyService {
     func printHello()
@@ -14,8 +15,11 @@ protocol MyService {
 
 @Bind(MyService.self)
 class MyServiceImpl: MyService {
+
+    @Inject var textProvider: TextProvider
+
     func printHello() {
-        print("Hello World!")
+        print(textProvider.hello())
     }
 }
 
@@ -25,7 +29,6 @@ class ViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
         myService.printHello()
     }
 }
