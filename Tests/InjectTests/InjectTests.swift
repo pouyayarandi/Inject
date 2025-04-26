@@ -119,7 +119,7 @@ final class InjectTests: XCTestCase {
         let sharedImpl = TestDependencyImpl()
         
         // Register a singleton dependency with a known instance
-        AppContainer.shared.register(TestDependency.self, isSingleton: true) {
+        AppContainer.shared.registerSingleton(TestDependency.self) {
             sharedImpl
         }
         

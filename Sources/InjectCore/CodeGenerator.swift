@@ -76,12 +76,16 @@ public func generateContainerCode(bindings: [Binding], imports: [String]) -> Str
 
             // Register all types with the shared instance
             for binding in bindings {
-                code += "        register(\(binding.type).self, isSingleton: true) { shared\(implementation) }\n"
+                code += "        registerSingleton(\(binding.type).self) { shared\(implementation) }\n"
             }
         } else {
             // Normal registration for non-singletons or singletons with a single type
             for binding in bindings {
-                code += "        register(\(binding.type).self, isSingleton: \(binding.isSingleton)) { \(binding.implementation)() }\n"
+                if binding.isSingleton {
+                    code += "        registerSingleton(\(binding.type).self) { \(binding.implementation)() }\n"
+                } else {
+                    code += "        register(\(binding.type).self) { \(binding.implementation)() }\n"
+                }
             }
         }
     }

@@ -8,16 +8,16 @@ public final class AppContainer: @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.inject.container", attributes: .concurrent)
     private var instances: [ObjectIdentifier: Any] = [:]
     private var factories: [ObjectIdentifier: () -> Any] = [:]
-    private var singletonTypes: Set<ObjectIdentifier> = []
+    private var singletonFlags: Set<ObjectIdentifier> = []
     
     private init() {}
     
     public func resolve<T>(type: T.Type) -> T {
         let typeId = ObjectIdentifier(type)
         
-        // Read access can be sync. Return T?
+        // For singleton types, check if we already have an instance
         let instance: T? = queue.sync {
-            if singletonTypes.contains(typeId), let existingInstance = instances[typeId] as? T {
+            if singletonFlags.contains(typeId), let existingInstance = instances[typeId] as? T {
                 return existingInstance
             }
             return nil
@@ -34,9 +34,10 @@ public final class AppContainer: @unchecked Sendable {
         }
         
         let newInstance = factory() as! T
-        let shouldStore = queue.sync { singletonTypes.contains(typeId) }
         
-        if shouldStore {
+        // Store the instance only if it's a singleton
+        let isSingleton = queue.sync { singletonFlags.contains(typeId) }
+        if isSingleton {
             queue.async(flags: .barrier) { [weak self] in
                 if self?.instances[typeId] == nil {
                     self?.instances[typeId] = newInstance
@@ -47,13 +48,21 @@ public final class AppContainer: @unchecked Sendable {
         return newInstance
     }
     
-    public func register<T>(_ type: T.Type, isSingleton: Bool = false, factory: @escaping () -> T) {
+    public func register<T>(_ type: T.Type, factory: @escaping () -> T) {
         let typeId = ObjectIdentifier(type)
         queue.async(flags: .barrier) { [weak self] in
             self?.factories[typeId] = factory
-            if isSingleton {
-                self?.singletonTypes.insert(typeId)
-            }
+            // By default, registrations are not singletons
+            self?.singletonFlags.remove(typeId)
+        }
+    }
+    
+    // This method will be used by the generated code to register singletons
+    public func registerSingleton<T>(_ type: T.Type, factory: @escaping () -> T) {
+        let typeId = ObjectIdentifier(type)
+        queue.async(flags: .barrier) { [weak self] in
+            self?.factories[typeId] = factory
+            self?.singletonFlags.insert(typeId)
         }
     }
 }
@@ -67,7 +76,7 @@ public final class AppContainer { // No Sendable conformance needed explicitly d
     // Properties are protected by @MainActor isolation
     private var instances: [ObjectIdentifier: Any] = [:]
     private var factories: [ObjectIdentifier: @MainActor () -> Any] = [:] // Factory must be Sendable
-    private var singletonTypes: Set<ObjectIdentifier> = []
+    private var singletonFlags: Set<ObjectIdentifier> = []
 
     private init() {
         // Must be called from MainActor
@@ -79,7 +88,8 @@ public final class AppContainer { // No Sendable conformance needed explicitly d
     public func resolve<T>(type: T.Type) -> T {
         let typeId = ObjectIdentifier(type)
 
-        if singletonTypes.contains(typeId), let instance = instances[typeId] as? T {
+        // For singleton types, check if we already have an instance
+        if singletonFlags.contains(typeId), let instance = instances[typeId] as? T {
             return instance
         }
 
@@ -89,9 +99,10 @@ public final class AppContainer { // No Sendable conformance needed explicitly d
 
         let newInstance = factory() as! T // T is Sendable
 
-        if singletonTypes.contains(typeId) {
-             if instances[typeId] == nil {
-                 instances[typeId] = newInstance
+        // Store the instance only if it's a singleton
+        if singletonFlags.contains(typeId) {
+            if instances[typeId] == nil {
+                instances[typeId] = newInstance
             }
         }
 
@@ -101,12 +112,18 @@ public final class AppContainer { // No Sendable conformance needed explicitly d
     // Register is synchronous when called from another @MainActor context
     // Factory must be @Sendable
     // TODO: T should be Sendable, currently ignored to suppress warnings
-    public func register<T>(_ type: T.Type, isSingleton: Bool = false, factory: @escaping @MainActor () -> T) {
+    public func register<T>(_ type: T.Type, factory: @escaping @MainActor () -> T) {
         let typeId = ObjectIdentifier(type)
         factories[typeId] = factory
-        if isSingleton {
-            singletonTypes.insert(typeId)
-        }
+        // By default, registrations are not singletons
+        singletonFlags.remove(typeId)
+    }
+    
+    // This method will be used by the generated code to register singletons
+    public func registerSingleton<T>(_ type: T.Type, factory: @escaping @MainActor () -> T) {
+        let typeId = ObjectIdentifier(type)
+        factories[typeId] = factory
+        singletonFlags.insert(typeId)
     }
 }
 

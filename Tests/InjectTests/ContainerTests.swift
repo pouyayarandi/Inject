@@ -55,7 +55,7 @@ final class ContainerTests: XCTestCase {
         resetContainer()
         
         // Register a singleton service
-        AppContainer.shared.register(TestService.self, isSingleton: true) {
+        AppContainer.shared.registerSingleton(TestService.self) {
             TestServiceImpl()
         }
         
@@ -72,7 +72,7 @@ final class ContainerTests: XCTestCase {
         resetContainer()
         
         // Register a non-singleton service
-        AppContainer.shared.register(TestService.self, isSingleton: false) {
+        AppContainer.shared.register(TestService.self) {
             TestServiceImpl()
         }
         

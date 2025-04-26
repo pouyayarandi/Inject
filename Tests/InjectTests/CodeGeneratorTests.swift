@@ -207,14 +207,14 @@ final class CodeGeneratorTests: XCTestCase {
         XCTAssertTrue(generatedCode.contains("import Inject"))
         
         // Check non-singleton registration
-        XCTAssertTrue(generatedCode.contains("register(ServiceA.self, isSingleton: false) { ServiceAImpl() }"))
+        XCTAssertTrue(generatedCode.contains("register(ServiceA.self) { ServiceAImpl() }"))
         
         // Check singleton registration
-        XCTAssertTrue(generatedCode.contains("register(ServiceB.self, isSingleton: true) { ServiceBImpl() }"))
+        XCTAssertTrue(generatedCode.contains("registerSingleton(ServiceB.self) { ServiceBImpl() }"))
         
         // Check multi-binding singleton optimization
         XCTAssertTrue(generatedCode.contains("let sharedMultiService = MultiService()"))
-        XCTAssertTrue(generatedCode.contains("register(ServiceInterface1.self, isSingleton: true) { sharedMultiService }"))
-        XCTAssertTrue(generatedCode.contains("register(ServiceInterface2.self, isSingleton: true) { sharedMultiService }"))
+        XCTAssertTrue(generatedCode.contains("registerSingleton(ServiceInterface1.self) { sharedMultiService }"))
+        XCTAssertTrue(generatedCode.contains("registerSingleton(ServiceInterface2.self) { sharedMultiService }"))
     }
 } 

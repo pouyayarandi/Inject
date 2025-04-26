@@ -135,13 +135,13 @@ final class IntegrationTests: XCTestCase {
         var logServiceInstances = 0
         
         // Register a transient service with a counter
-        AppContainer.shared.register(DataService.self, isSingleton: false) {
+        AppContainer.shared.register(DataService.self) {
             dataServiceInstances += 1
             return DataServiceImpl()
         }
         
         // Register a singleton service with a counter
-        AppContainer.shared.register(LogService.self, isSingleton: true) {
+        AppContainer.shared.registerSingleton(LogService.self) {
             logServiceInstances += 1
             return LogServiceImpl()
         }
