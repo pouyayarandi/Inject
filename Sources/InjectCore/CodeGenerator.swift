@@ -17,6 +17,7 @@ public func parseSourceFiles(in directories: [String]) throws -> (bindings: [Bin
             let sourceFile = try String(contentsOfFile: fullPath, encoding: .utf8)
             let syntax = Parser.parse(source: sourceFile)
             
+            visitor.setFileName(fullPath)
             visitor.walk(syntax)
         }
     }

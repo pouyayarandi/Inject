@@ -6,13 +6,14 @@ import SwiftParser
 public class DependencyVisitor: SyntaxVisitor {
     public var bindings: [Binding] = []
     public var injections: [InjectedDependency] = []
-    
+    private var fileName: String = ""
+
     public init() {
         super.init(viewMode: .sourceAccurate)
     }
     
     // Helper function to convert SwiftSyntax.SourceLocation to our custom SourceLocation
-    private func convertSourceLocation(_ location: SwiftSyntax.SourceLocation, fileName: String = "") -> SourceLocation {
+    private func convertSourceLocation(_ location: SwiftSyntax.SourceLocation) -> SourceLocation {
         return SourceLocation(
             line: location.line,
             column: location.column,
@@ -56,12 +57,12 @@ public class DependencyVisitor: SyntaxVisitor {
             
             // Create a binding for each type
             for type in types {
-                let converter = SourceLocationConverter(fileName: "", tree: Syntax(node).root)
+                let converter = SourceLocationConverter(fileName: fileName, tree: Syntax(node).root)
                 let swiftLocation = node.startLocation(converter: converter)
                 bindings.append(Binding(
                     type: type,
                     implementation: implementation,
-                    location: convertSourceLocation(swiftLocation, fileName: ""),
+                    location: convertSourceLocation(swiftLocation),
                     isSingleton: isSingleton
                 ))
             }
@@ -98,13 +99,18 @@ public class DependencyVisitor: SyntaxVisitor {
                 return .visitChildren
             }
             
-            let converter = SourceLocationConverter(fileName: "", tree: node.root)
+            let converter = SourceLocationConverter(fileName: fileName, tree: node.root)
             let swiftLocation = node.startLocation(converter: converter)
             injections.append(InjectedDependency(
                 type: type.description,
-                location: convertSourceLocation(swiftLocation, fileName: "")
+                location: convertSourceLocation(swiftLocation)
             ))
         }
         return .visitChildren
+    }
+    
+    /// Set the current file name being processed
+    public func setFileName(_ fileName: String) {
+        self.fileName = fileName
     }
 } 
