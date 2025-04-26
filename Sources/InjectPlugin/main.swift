@@ -149,7 +149,7 @@ func generateContainerCode(bindings: [Binding], imports: [String]) -> String {
 
 // Command line interface
 struct GenerateCommand: ParsableCommand {
-    static var configuration = CommandConfiguration(
+    static let configuration = CommandConfiguration(
         commandName: "inject-generator",
         abstract: "Generates dependency container code"
     )

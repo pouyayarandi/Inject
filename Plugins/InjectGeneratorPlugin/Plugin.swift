@@ -1,9 +1,9 @@
 import PackagePlugin
 import Foundation
 
-private func readIncludefile(workingDirectory: Path) throws -> [String] {
-    let includefilePath = workingDirectory.appending(".inject").appending("Includefile")
-    guard let content = try? String(contentsOfFile: includefilePath.string, encoding: .utf8) else {
+private func readIncludefile(workingDirectory: URL) throws -> [String] {
+    let includefileURL = workingDirectory.appendingPathComponent(".inject").appendingPathComponent("Includefile")
+    guard let content = try? String(contentsOf: includefileURL, encoding: .utf8) else {
         return []
     }
     return content.components(separatedBy: .newlines)
@@ -11,9 +11,9 @@ private func readIncludefile(workingDirectory: Path) throws -> [String] {
         .filter { !$0.isEmpty && !$0.hasPrefix("#") }
 }
 
-private func readImportfile(workingDirectory: Path) throws -> [String] {
-    let importfilePath = workingDirectory.appending(".inject").appending("Importfile")
-    guard let content = try? String(contentsOfFile: importfilePath.string, encoding: .utf8) else {
+private func readImportfile(workingDirectory: URL) throws -> [String] {
+    let importfileURL = workingDirectory.appendingPathComponent(".inject").appendingPathComponent("Importfile")
+    guard let content = try? String(contentsOf: importfileURL, encoding: .utf8) else {
         return []
     }
     return content.components(separatedBy: .newlines)
@@ -21,14 +21,14 @@ private func readImportfile(workingDirectory: Path) throws -> [String] {
         .filter { !$0.isEmpty && !$0.hasPrefix("#") }
 }
 
-private func findSwiftFiles(in directory: Path) throws -> [Path] {
+private func findSwiftFiles(in directory: URL) throws -> [URL] {
     let fileManager = FileManager.default
-    var swiftFiles: [Path] = []
+    var swiftFiles: [URL] = []
     
-    if let enumerator = fileManager.enumerator(atPath: directory.string) {
-        while let filePath = enumerator.nextObject() as? String {
-            if filePath.hasSuffix(".swift") {
-                swiftFiles.append(directory.appending(filePath))
+    if let enumerator = fileManager.enumerator(at: directory, includingPropertiesForKeys: [.isRegularFileKey], options: [.skipsHiddenFiles, .skipsPackageDescendants]) {
+        for case let fileURL as URL in enumerator {
+            if fileURL.pathExtension == "swift" {
+                swiftFiles.append(fileURL)
             }
         }
     }
@@ -43,39 +43,40 @@ struct InjectGeneratorPlugin: BuildToolPlugin {
         let injectPlugin = try context.tool(named: "InjectPlugin")
         
         // Create a directory for the generated files in the build directory
-        let outputDir = context.pluginWorkDirectory
-        try FileManager.default.createDirectory(atPath: outputDir.string, withIntermediateDirectories: true)
+        let outputDirURL = context.pluginWorkDirectoryURL
+        try FileManager.default.createDirectory(at: outputDirURL, withIntermediateDirectories: true)
         
         // Output file path in the build directory
-        let outputFilePath = outputDir.appending("Container+Generated.swift")
+        let outputFileURL = outputDirURL.appendingPathComponent("Container+Generated.swift")
         
-        // Get target source files
-        var sourceFiles = target.sourceModule?.sourceFiles.map(\.path) ?? []
+        // Get target source files as URLs
+        var sourceFileURLs = target.sourceModule?.sourceFiles.map(\.url) ?? []
         
         // Read paths from Includefile and append additional source files
-        let includePaths = try readIncludefile(workingDirectory: target.directory)
+        let targetDirectoryURL = URL(fileURLWithPath: target.directory.string)
+        let includePaths = try readIncludefile(workingDirectory: targetDirectoryURL)
         for relativePath in includePaths {
-            let absolutePath = target.directory.appending(relativePath)
-            sourceFiles.append(contentsOf: try findSwiftFiles(in: absolutePath))
+            let absoluteURL = targetDirectoryURL.appendingPathComponent(relativePath)
+            sourceFileURLs.append(contentsOf: try findSwiftFiles(in: absoluteURL))
         }
         
         // Read imports from Importfile
-        let imports = try readImportfile(workingDirectory: target.directory)
+        let imports = try readImportfile(workingDirectory: targetDirectoryURL)
         
-        let sourceDirs = Set(sourceFiles.map { $0.removingLastComponent() })
+        let sourceDirURLs = Set(sourceFileURLs.map { $0.deletingLastPathComponent() })
         
-        // Create the command
+        // Create the command using URLs
         return [
             .buildCommand(
                 displayName: "Generating Dependency Container",
-                executable: injectPlugin.path,
+                executable: injectPlugin.url, // Use URL
                 arguments: [
-                    "--source-dirs", sourceDirs.map(\.string).joined(separator: ","),
-                    "--output", outputFilePath.string,
+                    "--source-dirs", sourceDirURLs.map(\.path).joined(separator: ","),
+                    "--output", outputFileURL.path, // Use URL path string for argument
                     "--imports", imports.joined(separator: ",")
                 ],
-                inputFiles: sourceFiles,
-                outputFiles: [outputFilePath]
+                inputFiles: sourceFileURLs, // Use [URL]
+                outputFiles: [outputFileURL] // Use [URL]
             )
         ]
     }
@@ -90,40 +91,42 @@ extension InjectGeneratorPlugin: XcodeBuildToolPlugin {
         let injectPlugin = try context.tool(named: "InjectPlugin")
         
         // Create a directory for the generated files in the build directory
-        let outputDir = context.pluginWorkDirectory
-        try FileManager.default.createDirectory(atPath: outputDir.string, withIntermediateDirectories: true)
+        let outputDirURL = context.pluginWorkDirectoryURL
+        try FileManager.default.createDirectory(at: outputDirURL, withIntermediateDirectories: true)
         
         // Output file path in the build directory
-        let outputFilePath = outputDir.appending("Container+Generated.swift")
+        let outputFileURL = outputDirURL.appendingPathComponent("Container+Generated.swift")
         
-        // Get target source files
-        var sourceFiles = target.inputFiles
-            .filter { $0.type == .source && $0.path.extension == "swift" }
-            .map(\.path)
+        // Get target source files as URLs
+        var sourceFileURLs = target.inputFiles
+            .filter { $0.type == .source && $0.url.pathExtension == "swift" }
+            .map(\.url)
         
         // Read paths from Injectfile and append additional source files
-        let includePaths = try readIncludefile(workingDirectory: context.xcodeProject.directory)
+        let projectDirectoryURL = context.xcodeProject.directoryURL
+        let includePaths = try readIncludefile(workingDirectory: projectDirectoryURL)
         for relativePath in includePaths {
-            let absolutePath = context.xcodeProject.directory.appending(relativePath)
-            sourceFiles.append(contentsOf: try findSwiftFiles(in: absolutePath))
+            let absoluteURL = projectDirectoryURL.appendingPathComponent(relativePath)
+            sourceFileURLs.append(contentsOf: try findSwiftFiles(in: absoluteURL))
         }
         
         // Read imports from Importfile
-        let imports = try readImportfile(workingDirectory: context.xcodeProject.directory)
+        let imports = try readImportfile(workingDirectory: projectDirectoryURL)
         
-        let sourceDirs = Set(sourceFiles.map { $0.removingLastComponent() })
+        let sourceDirURLs = Set(sourceFileURLs.map { $0.deletingLastPathComponent() })
         
+        // Create the command using URLs
         return [
             .buildCommand(
                 displayName: "Generating Dependency Container",
-                executable: injectPlugin.path,
+                executable: injectPlugin.url, // Use URL
                 arguments: [
-                    "--source-dirs", sourceDirs.map(\.string).joined(separator: ","),
-                    "--output", outputFilePath.string,
+                    "--source-dirs", sourceDirURLs.map(\.path).joined(separator: ","),
+                    "--output", outputFileURL.path, // Use URL path string for argument
                     "--imports", imports.joined(separator: ",")
                 ],
-                inputFiles: sourceFiles,
-                outputFiles: [outputFilePath]
+                inputFiles: sourceFileURLs, // Use [URL]
+                outputFiles: [outputFileURL] // Use [URL]
             )
         ]
     }
