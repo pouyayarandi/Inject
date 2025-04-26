@@ -19,6 +19,11 @@ let package = Package(
         .plugin(
             name: "InjectGenerator",
             targets: ["InjectGeneratorPlugin"]
+        ),
+        // Expose InjectCore as a library so it can be used by other packages
+        .library(
+            name: "InjectCore",
+            targets: ["InjectCore"]
         )
     ],
     dependencies: [
@@ -44,12 +49,20 @@ let package = Package(
             ]
         ),
 
+        // Core library containing the dependency injection logic
+        .target(
+            name: "InjectCore",
+            dependencies: [
+                .product(name: "SwiftSyntax", package: "swift-syntax"),
+                .product(name: "SwiftParser", package: "swift-syntax")
+            ]
+        ),
+
         // Code generation executable
         .executableTarget(
             name: "InjectPlugin",
             dependencies: [
-                .product(name: "SwiftSyntax", package: "swift-syntax"),
-                .product(name: "SwiftParser", package: "swift-syntax"),
+                "InjectCore",
                 .product(name: "ArgumentParser", package: "swift-argument-parser")
             ]
         ),
@@ -69,6 +82,7 @@ let package = Package(
             dependencies: [
                 "Inject",
                 "InjectMacros",
+                "InjectCore",
                 .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
             ]
         ),
