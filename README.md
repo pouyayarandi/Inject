@@ -121,6 +121,42 @@ struct MyApp: App {
 }
 ```
 
+## Testing with TestInjector
+
+The package includes a `TestInjector` class to help you mock dependencies in your unit tests:
+
+```swift
+class UserServiceTests: XCTestCase {
+    func testUserProfile() throws {
+        // Arrange
+        let mockNetworkClient = MockNetworkClient()
+        mockNetworkClient.responseToReturn = userProfileData
+        
+        let viewModel = UserProfileViewModel()
+        
+        // Inject the mock
+        try TestInjector(viewModel)
+            .inject(mockNetworkClient, as: NetworkClient.self)
+        
+        // Act
+        viewModel.loadProfile()
+        
+        // Assert
+        XCTAssertEqual(viewModel.userName, "John Doe")
+    }
+}
+```
+
+### Key Features
+
+- Type-safe dependency injection for tests
+- Allows injecting mocks into objects using `@Inject` properties
+- Works with both protocol and concrete types
+- Can target specific properties using the `key` parameter
+- Throws descriptive errors when injection targets aren't found
+
+This makes it easy to isolate components during unit testing without modifying your production code.
+
 ## Requirements
 
 - Swift 5.9 or later
