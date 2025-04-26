@@ -20,12 +20,13 @@ class DependencyVisitor: SyntaxVisitor {
     var bindings: [Binding] = []
     var injections: [InjectedDependency] = []
     
-    override func visit(_ node: ClassDeclSyntax) -> SyntaxVisitorContinueKind {
-        if let bindAttr = node.attributes.first(where: { attr in
+    // Helper method to process @Bind attribute for any declaration type
+    private func processBindAttribute(name: TokenSyntax, attributes: AttributeListSyntax, node: SyntaxProtocol) {
+        if let bindAttr = attributes.first(where: { attr in
             guard case let .attribute(attribute) = attr.trimmed else { return false }
             return attribute.attributeName.description == "Bind"
         }) {
-            let implementation = node.name.text
+            let implementation = name.text
             
             // Extract all types from @Bind
             var types: [String] = []
@@ -47,7 +48,7 @@ class DependencyVisitor: SyntaxVisitor {
             }
             
             // Check if @Singleton is present
-            let isSingleton = node.attributes.contains(where: { attr in
+            let isSingleton = attributes.contains(where: { attr in
                 guard case let .attribute(attribute) = attr.trimmed else { return false }
                 return attribute.attributeName.description == "Singleton"
             })
@@ -57,11 +58,30 @@ class DependencyVisitor: SyntaxVisitor {
                 bindings.append(Binding(
                     type: type,
                     implementation: implementation,
-                    location: node.startLocation(converter: SourceLocationConverter(fileName: "", tree: node.root)),
+                    location: node.startLocation(converter: SourceLocationConverter(fileName: "", tree: Syntax(node).root)),
                     isSingleton: isSingleton
                 ))
             }
         }
+    }
+    
+    override func visit(_ node: ClassDeclSyntax) -> SyntaxVisitorContinueKind {
+        processBindAttribute(name: node.name, attributes: node.attributes, node: node)
+        return .visitChildren
+    }
+    
+    override func visit(_ node: StructDeclSyntax) -> SyntaxVisitorContinueKind {
+        processBindAttribute(name: node.name, attributes: node.attributes, node: node)
+        return .visitChildren
+    }
+    
+    override func visit(_ node: ActorDeclSyntax) -> SyntaxVisitorContinueKind {
+        processBindAttribute(name: node.name, attributes: node.attributes, node: node)
+        return .visitChildren
+    }
+    
+    override func visit(_ node: EnumDeclSyntax) -> SyntaxVisitorContinueKind {
+        processBindAttribute(name: node.name, attributes: node.attributes, node: node)
         return .visitChildren
     }
     

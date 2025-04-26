@@ -4,7 +4,7 @@
 import Inject
 
 @Bind
-public class TextProvider {
+public struct TextProvider {
 
     public init() {}
 
