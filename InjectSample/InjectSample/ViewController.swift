@@ -13,22 +13,36 @@ protocol MyService {
     func printHello()
 }
 
-@Bind(MyService.self)
-class MyServiceImpl: MyService {
+protocol AnotherService {
+    func sayGoodbye()
+}
+
+@Singleton
+@Bind(
+    MyService.self,
+    AnotherService.self
+)
+class ServicesImpl: MyService, AnotherService {
 
     @Inject var textProvider: TextProvider
 
     func printHello() {
         print(textProvider.hello())
     }
+
+    func sayGoodbye() {
+        print("Goodbye!")
+    }
 }
 
 class ViewController: UIViewController {
 
     @Inject var myService: MyService
+    @Inject var anotherService: AnotherService
 
     override func viewDidLoad() {
         super.viewDidLoad()
         myService.printHello()
+        anotherService.sayGoodbye()
     }
 }

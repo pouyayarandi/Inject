@@ -4,7 +4,6 @@
 import Inject
 
 @Bind
-@Singleton
 public class TextProvider {
 
     public init() {}

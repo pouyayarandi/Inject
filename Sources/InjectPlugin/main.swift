@@ -26,13 +26,24 @@ class DependencyVisitor: SyntaxVisitor {
             return attribute.attributeName.description == "Bind"
         }) {
             let implementation = node.name.text
-            var type = implementation
             
-            // Check if a specific type is provided in @Bind
+            // Extract all types from @Bind
+            var types: [String] = []
             if case let .attribute(attribute) = bindAttr,
-               let arguments = attribute.arguments?.as(LabeledExprListSyntax.self),
-               let firstArg = arguments.first {
-                type = firstArg.expression.description.replacingOccurrences(of: ".self", with: "")
+               let arguments = attribute.arguments?.as(LabeledExprListSyntax.self) {
+                if arguments.isEmpty {
+                    // If no types provided, use the implementation type
+                    types.append(implementation)
+                } else {
+                    // Process each type argument
+                    for arg in arguments {
+                        let typeText = arg.expression.trimmed.description.replacingOccurrences(of: ".self", with: "")
+                        types.append(typeText)
+                    }
+                }
+            } else {
+                // Default to the implementation type if no arguments
+                types.append(implementation)
             }
             
             // Check if @Singleton is present
@@ -41,12 +52,15 @@ class DependencyVisitor: SyntaxVisitor {
                 return attribute.attributeName.description == "Singleton"
             })
             
-            bindings.append(Binding(
-                type: type,
-                implementation: implementation,
-                location: node.startLocation(converter: SourceLocationConverter(fileName: "", tree: node.root)),
-                isSingleton: isSingleton
-            ))
+            // Create a binding for each type
+            for type in types {
+                bindings.append(Binding(
+                    type: type,
+                    implementation: implementation,
+                    location: node.startLocation(converter: SourceLocationConverter(fileName: "", tree: node.root)),
+                    isSingleton: isSingleton
+                ))
+            }
         }
         return .visitChildren
     }
@@ -135,8 +149,27 @@ func generateContainerCode(bindings: [Binding], imports: [String]) -> String {
     
     """
     
-    for binding in Set<Binding>(bindings) {
-        code += "        register(\(binding.type).self, isSingleton: \(binding.isSingleton)) { \(binding.implementation)() }\n"
+    // Group bindings by implementation
+    let bindingsByImplementation = Dictionary(grouping: bindings) { $0.implementation }
+    
+    for (implementation, bindings) in bindingsByImplementation {
+        let isSingleton = bindings.first?.isSingleton ?? false
+        
+        if isSingleton && bindings.count > 1 {
+            // For singletons bound to multiple types, create a shared factory function
+            code += "        // Create shared singleton instance of \(implementation)\n"
+            code += "        let shared\(implementation) = \(implementation)()\n"
+
+            // Register all types with the shared instance
+            for binding in bindings {
+                code += "        register(\(binding.type).self, isSingleton: true) { shared\(implementation) }\n"
+            }
+        } else {
+            // Normal registration for non-singletons or singletons with a single type
+            for binding in bindings {
+                code += "        register(\(binding.type).self, isSingleton: \(binding.isSingleton)) { \(binding.implementation)() }\n"
+            }
+        }
     }
     
     code += """
