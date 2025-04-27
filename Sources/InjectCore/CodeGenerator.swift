@@ -65,7 +65,7 @@ public func validateDependencies(bindings: [Binding], injections: [InjectedDepen
 }
 
 /// Generate container code that registers all dependencies
-public func generateContainerCode(bindings: [Binding], imports: [String]) -> String {
+public func generateContainerCode(bindings: [Binding], imports: [String], injections: [InjectedDependency]) -> String {
     var code = ""
     
     // Add custom imports
@@ -112,7 +112,29 @@ public func generateContainerCode(bindings: [Binding], imports: [String]) -> Str
     code += """
         }
     }
-    """
     
+    """
+
+    code += """
+    
+    #if DEBUG
+    /// Resolves all dependencies injected in code to assert bindings
+    /// Use it only for testing purposes
+    extension AppContainer {
+        func assertAllInjections() {
+
+    """
+
+    for injection in Set(injections.map(\.type)) {
+        code += "       _ = AppContainer.shared.resolve(type: \(injection).self)\n"
+    }
+
+    code += """
+        }
+    }
+    #endif
+    
+    """
+
     return code
 } 

@@ -12,8 +12,19 @@
 		839FA9682DB9290200927753 /* MyLibrary in Frameworks */ = {isa = PBXBuildFile; productRef = 839FA9672DB9290200927753 /* MyLibrary */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		837ACCE12DBE42EF003CA0DF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8322B8C02DB8CD3600C601B8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8322B8C72DB8CD3600C601B8;
+			remoteInfo = InjectSample;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		8322B8C82DB8CD3600C601B8 /* InjectSample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InjectSample.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		837ACCDD2DBE42EF003CA0DF /* InjectSampleTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = InjectSampleTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -35,6 +46,11 @@
 			path = InjectSample;
 			sourceTree = "<group>";
 		};
+		837ACCDE2DBE42EF003CA0DF /* InjectSampleTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = InjectSampleTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -48,6 +64,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		837ACCDA2DBE42EF003CA0DF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -55,6 +78,7 @@
 			isa = PBXGroup;
 			children = (
 				8322B8CA2DB8CD3600C601B8 /* InjectSample */,
+				837ACCDE2DBE42EF003CA0DF /* InjectSampleTests */,
 				8322B8C92DB8CD3600C601B8 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -63,6 +87,7 @@
 			isa = PBXGroup;
 			children = (
 				8322B8C82DB8CD3600C601B8 /* InjectSample.app */,
+				837ACCDD2DBE42EF003CA0DF /* InjectSampleTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -96,6 +121,29 @@
 			productReference = 8322B8C82DB8CD3600C601B8 /* InjectSample.app */;
 			productType = "com.apple.product-type.application";
 		};
+		837ACCDC2DBE42EF003CA0DF /* InjectSampleTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 837ACCE52DBE42EF003CA0DF /* Build configuration list for PBXNativeTarget "InjectSampleTests" */;
+			buildPhases = (
+				837ACCD92DBE42EF003CA0DF /* Sources */,
+				837ACCDA2DBE42EF003CA0DF /* Frameworks */,
+				837ACCDB2DBE42EF003CA0DF /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				837ACCE22DBE42EF003CA0DF /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				837ACCDE2DBE42EF003CA0DF /* InjectSampleTests */,
+			);
+			name = InjectSampleTests;
+			packageProductDependencies = (
+			);
+			productName = InjectSampleTests;
+			productReference = 837ACCDD2DBE42EF003CA0DF /* InjectSampleTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -108,6 +156,10 @@
 				TargetAttributes = {
 					8322B8C72DB8CD3600C601B8 = {
 						CreatedOnToolsVersion = 16.0;
+					};
+					837ACCDC2DBE42EF003CA0DF = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = 8322B8C72DB8CD3600C601B8;
 					};
 				};
 			};
@@ -130,12 +182,20 @@
 			projectRoot = "";
 			targets = (
 				8322B8C72DB8CD3600C601B8 /* InjectSample */,
+				837ACCDC2DBE42EF003CA0DF /* InjectSampleTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		8322B8C62DB8CD3600C601B8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		837ACCDB2DBE42EF003CA0DF /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -152,9 +212,21 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		837ACCD92DBE42EF003CA0DF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		837ACCE22DBE42EF003CA0DF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8322B8C72DB8CD3600C601B8 /* InjectSample */;
+			targetProxy = 837ACCE12DBE42EF003CA0DF /* PBXContainerItemProxy */;
+		};
 		837BA3052DB8DE83001DC233 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			productRef = 837BA3042DB8DE83001DC233 /* InjectGenerator */;
@@ -337,6 +409,42 @@
 			};
 			name = Release;
 		};
+		837ACCE32DBE42EF003CA0DF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Z5GH44G8KH;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pyarandi.InjectSampleTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/InjectSample.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/InjectSample";
+			};
+			name = Debug;
+		};
+		837ACCE42DBE42EF003CA0DF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Z5GH44G8KH;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pyarandi.InjectSampleTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/InjectSample.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/InjectSample";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -354,6 +462,15 @@
 			buildConfigurations = (
 				8322B8DC2DB8CD3700C601B8 /* Debug */,
 				8322B8DD2DB8CD3700C601B8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		837ACCE52DBE42EF003CA0DF /* Build configuration list for PBXNativeTarget "InjectSampleTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				837ACCE32DBE42EF003CA0DF /* Debug */,
+				837ACCE42DBE42EF003CA0DF /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

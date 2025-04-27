@@ -27,7 +27,12 @@ struct GenerateCommand: ParsableCommand {
         // Validate all dependencies are properly bound
         try validateDependencies(bindings: bindings, injections: injections)
 
-        let generatedCode = generateContainerCode(bindings: bindings, imports: importStatements)
+        let generatedCode = generateContainerCode(
+            bindings: bindings,
+            imports: importStatements,
+            injections: injections
+        )
+
         try generatedCode.write(toFile: output, atomically: true, encoding: .utf8)
     }
 }
