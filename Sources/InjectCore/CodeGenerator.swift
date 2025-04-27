@@ -21,11 +21,15 @@ public func parseSourceFiles(in directories: [String]) throws -> (bindings: [Bin
             visitor.walk(syntax)
         }
     }
-    
-    return (visitor.bindings, visitor.injections)
+
+    // Removes identical duplicates of binding
+    let bindings = Set<Binding>(visitor.bindings)
+
+    return (.init(bindings), visitor.injections)
 }
 
 /// Validate that all injected dependencies have a corresponding binding
+/// and there is no duplicate binding for a specific type
 public func validateDependencies(bindings: [Binding], injections: [InjectedDependency]) throws {
     let registeredTypes = Set(bindings.map { $0.type })
     var missingDependencies: [(type: String, location: SourceLocation)] = []
@@ -34,6 +38,21 @@ public func validateDependencies(bindings: [Binding], injections: [InjectedDepen
         if !registeredTypes.contains(injection.type) {
             missingDependencies.append((injection.type, injection.location))
         }
+    }
+
+    if registeredTypes.count != bindings.count {
+        // There is some duplicate bindings
+        var message = "Duplicate @Bind found for the following types:\n"
+        for type in registeredTypes {
+            let bindings = bindings.filter({ $0.type == type })
+            if bindings.count > 1 {
+                message += "- \(type) is bound with multiple implementations:\n"
+                for binding in bindings {
+                    message += "  - \(binding.location)\n"
+                }
+            }
+        }
+        throw ValidationError(message: message)
     }
 
     if !missingDependencies.isEmpty {

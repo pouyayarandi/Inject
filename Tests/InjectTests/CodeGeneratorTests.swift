@@ -185,6 +185,23 @@ final class CodeGeneratorTests: XCTestCase {
             
             XCTAssertTrue(validationError.message.contains("ServiceC"))
         }
+
+        // Invalid case: duplicate binding for a type
+        let duplicateBindings = [
+            Binding(type: "ServiceA", implementation: "ServiceA1", location: SourceLocation(line: 1, column: 1, offset: 0, file: ""), isSingleton: true),
+            Binding(type: "ServiceA", implementation: "ServiceA2", location: SourceLocation(line: 2, column: 1, offset: 0, file: ""), isSingleton: true),
+            Binding(type: "ServiceB", implementation: "ServiceB", location: SourceLocation(line: 3, column: 1, offset: 0, file: ""), isSingleton: true)
+        ]
+
+        // Should throw ValidationError
+        XCTAssertThrowsError(try validateDependencies(bindings: duplicateBindings, injections: injections)) { error in
+            guard let validationError = error as? ValidationError else {
+                XCTFail("Expected ValidationError")
+                return
+            }
+
+            XCTAssertTrue(validationError.message.contains("ServiceA"))
+        }
     }
     
     // Test generating container code
