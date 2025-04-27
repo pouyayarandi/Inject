@@ -26,16 +26,13 @@ public final class Inject<T> {
     
     /// Allows setting a mock value for testing purposes.
     /// This method should only be used in tests.
+    #if DEBUG
     public func setForTesting(_ newValue: T) {
         // Ensure thread safety when setting mock value
         lock.lock(); defer { lock.unlock() }
-        #if DEBUG
         value = newValue
-        #else
-        // Provide a way to indicate misuse in release builds if necessary
-        assertionFailure("setForTesting should only be used in DEBUG configuration")
-        #endif
     }
+    #endif
 }
 #else
 // Swift 6+: T must be Sendable, property wrapper isolated to MainActor.
@@ -62,13 +59,10 @@ public final class Inject<T> {
     
     /// Allows setting a mock value for testing purposes.
     /// Must be called from MainActor.
+    #if DEBUG
     public func setForTesting(_ newValue: T) {
-        #if DEBUG
         value = newValue
-        #else
-        // Provide a way to indicate misuse in release builds if necessary
-        assertionFailure("setForTesting should only be used in DEBUG configuration")
-        #endif
     }
+    #endif
 }
 #endif
