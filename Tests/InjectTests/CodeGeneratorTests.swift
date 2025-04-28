@@ -216,7 +216,7 @@ final class CodeGeneratorTests: XCTestCase {
         ]
         
         // Generate code with custom imports
-        let generatedCode = generateContainerCode(bindings: bindings, imports: ["UIKit", "Foundation"])
+        let generatedCode = generateContainerCode(bindings: bindings, imports: ["UIKit", "Foundation"], injections: [])
         
         // Verify the generated code
         XCTAssertTrue(generatedCode.contains("import UIKit"))
