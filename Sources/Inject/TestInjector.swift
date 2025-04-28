@@ -1,25 +1,30 @@
 import Foundation
 
-/// A utility class for injecting test dependencies into objects
-public class TestInjector {
-    private let mirror: Mirror
-
-    /// Initialize with the system under test
-    /// - Parameter sut: The object that contains `Inject` properties
-    public init(_ sut: Any) {
-        mirror = .init(reflecting: sut)
+/// A utility for injecting test dependencies into objects
+@propertyWrapper
+public struct TestInjector<T> {
+    public init(_ wrappedValue: T) {
+        self.wrappedValue = wrappedValue
     }
 
-    private struct InjectableNotFound<T>: Error, CustomStringConvertible {
+    public init(wrappedValue: T) {
+        self.wrappedValue = wrappedValue
+    }
+
+    private var mirror: Mirror {
+        Mirror(reflecting: wrappedValue)
+    }
+
+    private struct InjectableNotFound<I>: Error, CustomStringConvertible {
         var description: String {
-            "Injectable not found for type: \(String(describing: T.self))"
+            "Injectable not found for type: \(String(describing: I.self))"
         }
     }
 
-    private func injectables<T>(of type: T.Type, key: String?) throws -> [Inject<T>] {
-        let injectables: [Inject<T>] = mirror.children.compactMap {
+    private func injectables<I>(of type: I.Type, key: String?) throws -> [Inject<I>] {
+        let injectables: [Inject<I>] = mirror.children.compactMap {
             if let key, $0.label != "_\(key)" { return nil }
-            return $0.value as? Inject<T>
+            return $0.value as? Inject<I>
         }
 
         if injectables.isEmpty {
@@ -40,10 +45,16 @@ public class TestInjector {
     @MainActor
     #endif
     @discardableResult
-    public func inject<T>(_ value: T, as type: T.Type = T.self, key: String? = nil) throws -> Self {
-        try injectables(of: T.self, key: key).forEach {
+    public func inject<I>(_ value: I, as type: I.Type = I.self, key: String? = nil) throws -> Self {
+        try injectables(of: I.self, key: key).forEach {
             $0.setForTesting(value)
         }
         return self
+    }
+
+    public var wrappedValue: T
+
+    public var projectedValue: TestInjector<T> {
+        self
     }
 }

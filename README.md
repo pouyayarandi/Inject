@@ -123,25 +123,34 @@ struct MyApp: App {
 
 ## Testing with TestInjector
 
-The package includes a `TestInjector` class to help you mock dependencies in your unit tests:
+The package includes a `TestInjector` property wrapper to help you mock dependencies in your unit tests:
 
 ```swift
 class UserServiceTests: XCTestCase {
     func testUserProfile() throws {
-        // Arrange
+        // Traditional approach
         let mockNetworkClient = MockNetworkClient()
-        mockNetworkClient.responseToReturn = userProfileData
-        
         let viewModel = UserProfileViewModel()
         
-        // Inject the mock
-        try TestInjector(viewModel)
-            .inject(mockNetworkClient, as: NetworkClient.self)
+        // Create injector and inject mock
+        let injector = TestInjector(viewModel)
+        try injector.inject(mockNetworkClient, as: NetworkClient.self)
         
-        // Act
+        // Act and assert
         viewModel.loadProfile()
+        XCTAssertEqual(viewModel.userName, "John Doe")
+    }
+    
+    func testUserProfileWithPropertyWrapper() throws {
+        // Property wrapper approach - define sut with @TestInjector
+        @TestInjector var viewModel = UserProfileViewModel()
+        let mockNetworkClient = MockNetworkClient()
         
-        // Assert
+        // Inject mock using the $ projected value
+        try $viewModel.inject(mockNetworkClient, as: NetworkClient.self)
+        
+        // Act and assert
+        viewModel.loadProfile()
         XCTAssertEqual(viewModel.userName, "John Doe")
     }
 }
@@ -150,6 +159,7 @@ class UserServiceTests: XCTestCase {
 ### Key Features
 
 - Type-safe dependency injection for tests
+- Can be used either as a property wrapper or through direct instantiation
 - Allows injecting mocks into objects using `@Inject` properties
 - Works with both protocol and concrete types
 - Can target specific properties using the `key` parameter

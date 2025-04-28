@@ -22,7 +22,7 @@ protocol AnotherService {
     MyService.self,
     AnotherService.self
 )
-class ServicesImpl: MyService, AnotherService {
+class ServicesImpl: MyService {
 
     @Inject var textProvider: TextProvider
 

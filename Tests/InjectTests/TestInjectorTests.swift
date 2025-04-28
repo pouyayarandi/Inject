@@ -70,61 +70,57 @@ final class TestInjectorTests: XCTestCase {
     
     func testInjectSingleDependency() throws {
         // Arrange
-        let sut = SingleDependencyClass()
+        @TestInjector var sut = SingleDependencyClass()
         let mockService = MockService()
-        let injector = TestInjector(sut)
-        
+
         // Verify initial state uses container-provided dependency
         XCTAssertEqual(sut.getServiceValue(), "original value")
         
         // Act
-        try injector.inject(mockService, as: TestService.self)
-        
+        try $sut.inject(mockService, as: TestService.self)
+
         // Assert
         XCTAssertEqual(sut.getServiceValue(), "mock value")
     }
     
     func testInjectMultipleDependenciesOfSameType() throws {
         // Arrange
-        let sut = MultiDependencyClass()
+        @TestInjector var sut = MultiDependencyClass()
         let mockService = MockService()
-        let injector = TestInjector(sut)
-        
+
         // Verify initial state
         XCTAssertEqual(sut.getServiceValues(), ["original value", "original value"])
         
         // Act
-        try injector.inject(mockService, as: TestService.self)
-        
+        try $sut.inject(mockService, as: TestService.self)
+
         // Assert - both properties should be injected
         XCTAssertEqual(sut.getServiceValues(), ["mock value", "mock value"])
     }
     
     func testInjectWithKey() throws {
         // Arrange
-        let sut = KeyedDependencyClass()
+        @TestInjector var sut = KeyedDependencyClass()
         let mockService = MockService()
-        let injector = TestInjector(sut)
-        
+
         // Verify initial state
         XCTAssertEqual(sut.getServiceValues(), ["original value", "original value"])
         
         // Act - inject only mainService using key
-        try injector.inject(mockService, as: TestService.self, key: "mainService")
-        
+        try $sut.inject(mockService, as: TestService.self, key: "mainService")
+
         // Assert - only mainService should be mocked
         XCTAssertEqual(sut.getServiceValues(), ["mock value", "original value"])
     }
     
     func testChainedInjection() throws {
         // Arrange
-        let sut = MultiDependencyClass()
+        @TestInjector var sut = MultiDependencyClass()
         let mockService1 = MockService()
         let mockService2 = MockService()
-        let injector = TestInjector(sut)
-        
+
         // Act - test builder pattern with chained calls
-        try injector
+        try $sut
             .inject(mockService1, as: TestService.self, key: "service1")
             .inject(mockService2, as: TestService.self, key: "service2")
         
@@ -134,26 +130,24 @@ final class TestInjectorTests: XCTestCase {
     
     func testInjectableNotFound() throws {
         // Arrange
-        let sut = NoDependencyClass()
+        @TestInjector var sut = NoDependencyClass()
         let mockService = MockService()
-        let injector = TestInjector(sut)
-        
+
         // Act & Assert - should throw when no injectable is found
-        XCTAssertThrowsError(try injector.inject(mockService, as: TestService.self)) { error in
+        XCTAssertThrowsError(try $sut.inject(mockService, as: TestService.self)) { error in
             XCTAssertTrue(String(describing: error).contains("Injectable not found for type"))
         }
     }
     
     func testInjectDifferentType() throws {
         // Arrange
-        let sut = SingleDependencyClass()
-        let injector = TestInjector(sut)
-        
+        @TestInjector var sut = SingleDependencyClass()
+
         // Different type than what's expected
         let wrongType = "string value"
         
         // Act & Assert - should fail due to type mismatch
-        XCTAssertThrowsError(try injector.inject(wrongType)) { error in
+        XCTAssertThrowsError(try $sut.inject(wrongType)) { error in
             XCTAssertTrue(String(describing: error).contains("Injectable not found for type"))
         }
     }
