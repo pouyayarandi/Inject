@@ -19,7 +19,7 @@ Add this package to your project using Swift Package Manager:
 
 ```swift
 dependencies: [
-    .package(url: "YOUR_REPOSITORY_URL", from: "1.0.0")
+    .package(url: "https://github.com/pouyayarandi/Inject.git", from: "1.0.0")
 ]
 ```
 
@@ -95,14 +95,11 @@ In your `Package.swift`, add the plugin to your target:
 
 1. Add the Inject package to your project in Xcode
 2. Select your target in Xcode
-3. Go to the "Build Phases" tab
-4. Click the "+" button and select "New Run Script Phase"
-5. Add the following script:
-```bash
-# This will be handled automatically by the build plugin
-```
+3. Go to the "Build Settings" tab
+4. Enable "Build Tool Plugins" 
+5. In the "Target Dependencies" section, click + and add the "InjectGenerator" plugin
 
-The plugin will automatically:
+There's no need to add a custom build script. The plugin will automatically:
 - Run during the build phase
 - Generate the container code in the build directory (not in your source files)
 - Regenerate the code when dependencies change
