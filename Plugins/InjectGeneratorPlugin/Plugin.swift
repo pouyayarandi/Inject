@@ -2,36 +2,28 @@ import PackagePlugin
 import Foundation
 
 private func readIncludefile(workingDirectory: URL) -> [String] {
-    let injectDirectory = workingDirectory.appendingPathComponent(".inject")
-    let includefileURL = injectDirectory.appendingPathComponent("Includefile")
-    let fileManager = FileManager.default
-    // Ensure both .inject directory and Includefile exist
-    guard fileManager.fileExists(atPath: injectDirectory.path),
-          fileManager.fileExists(atPath: includefileURL.path) else {
-        return []
-    }
+    let includefileURL = workingDirectory
+        .appendingPathComponent(".inject")
+        .appendingPathComponent("Includefile")
+
     guard let content = try? String(contentsOf: includefileURL, encoding: .utf8) else {
         return []
     }
+
     return content.components(separatedBy: .newlines)
         .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
         .filter { !$0.isEmpty && !$0.hasPrefix("#") }
 }
 
 private func readImportfile(workingDirectory: URL) -> [String] {
-    let injectDirectory = workingDirectory.appendingPathComponent(".inject")
-    let importfileURL = injectDirectory.appendingPathComponent("Importfile")
-    let fileManager = FileManager.default
-    // Ensure both .inject directory and Importfile exist
-    guard fileManager.fileExists(atPath: injectDirectory.path),
-          fileManager.fileExists(atPath: importfileURL.path) else {
-        return []
-    }
+    let importfileURL = workingDirectory
+        .appendingPathComponent(".inject")
+        .appendingPathComponent("Importfile")
 
-    // Try to read the file content
     guard let content = try? String(contentsOf: importfileURL, encoding: .utf8) else {
         return []
     }
+
     return content.components(separatedBy: .newlines)
         .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
         .filter { !$0.isEmpty && !$0.hasPrefix("#") }
