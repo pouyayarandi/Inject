@@ -2,10 +2,104 @@ import Foundation
 import SwiftSyntax
 import SwiftParser
 
+// Cache structure for storing parsed results
+private struct FileCache: Codable {
+    let lastModified: Date
+    let bindings: [Binding]
+    let injections: [InjectedDependency]
+}
+
+// Cache manager for handling file caching
+private class CacheManager {
+    private var cache: [String: FileCache] = [:]
+    private let lock = NSLock()
+    private let cacheFileURL: URL
+    private var hasChanges = false
+    
+    init() {
+        // Store cache in derived data directory
+        let fileManager = FileManager.default
+        let derivedDataURL = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("com.inject")
+            .appendingPathComponent("cache")
+        
+        // Create cache directory if it doesn't exist
+        try? fileManager.createDirectory(at: derivedDataURL, withIntermediateDirectories: true)
+        
+        cacheFileURL = derivedDataURL.appendingPathComponent("inject.cache")
+        loadCache()
+    }
+    
+    private func loadCache() {
+        guard let data = try? Data(contentsOf: cacheFileURL),
+              let decodedCache = try? JSONDecoder().decode([String: FileCache].self, from: data) else {
+            return
+        }
+        cache = decodedCache
+    }
+    
+    private func saveCache() {
+        guard hasChanges else { return }
+        
+        do {
+            let data = try JSONEncoder().encode(cache)
+            try data.write(to: cacheFileURL)
+            hasChanges = false
+        } catch {
+            print("Failed to save cache: \(error)")
+        }
+    }
+    
+    func getCache(for filePath: String) -> FileCache? {
+        lock.lock()
+        defer { lock.unlock() }
+        return cache[filePath]
+    }
+    
+    func updateCache(for filePath: String, bindings: [Binding], injections: [InjectedDependency]) {
+        lock.lock()
+        defer { lock.unlock() }
+        
+        cache[filePath] = FileCache(
+            lastModified: Date(),
+            bindings: bindings,
+            injections: injections
+        )
+        hasChanges = true
+    }
+    
+    func clearCache() {
+        lock.lock()
+        defer { lock.unlock() }
+        cache.removeAll()
+        hasChanges = true
+    }
+    
+    func invalidateCache(for filePath: String) {
+        lock.lock()
+        defer { lock.unlock() }
+        cache.removeValue(forKey: filePath)
+        hasChanges = true
+    }
+    
+    func flush() {
+        lock.lock()
+        defer { lock.unlock() }
+        saveCache()
+    }
+}
+
 /// Parse Swift source files and find bindings and injections
 public func parseSourceFiles(in directories: [String]) throws -> (bindings: [Binding], injections: [InjectedDependency]) {
-    let visitor = DependencyVisitor()
+    let cacheManager = CacheManager()
     let fileManager = FileManager.default
+    var allBindings: [Binding] = []
+    var allInjections: [InjectedDependency] = []
+    
+    // Create a concurrent queue for parallel processing
+    let queue = DispatchQueue(label: "com.inject.parser", attributes: .concurrent)
+    let group = DispatchGroup()
+    let lock = NSLock()
     
     for directory in directories {
         guard let enumerator = fileManager.enumerator(atPath: directory) else { continue }
@@ -14,18 +108,53 @@ public func parseSourceFiles(in directories: [String]) throws -> (bindings: [Bin
             guard filePath.hasSuffix(".swift") else { continue }
             
             let fullPath = (directory as NSString).appendingPathComponent(filePath)
-            let sourceFile = try String(contentsOfFile: fullPath, encoding: .utf8)
-            let syntax = Parser.parse(source: sourceFile)
             
-            visitor.setFileName(fullPath)
-            visitor.walk(syntax)
+            // Check if file has been modified since last cache
+            if let cache = cacheManager.getCache(for: fullPath),
+               let attributes = try? fileManager.attributesOfItem(atPath: fullPath),
+               let modificationDate = attributes[.modificationDate] as? Date,
+               modificationDate <= cache.lastModified {
+                // Use cached results
+                lock.lock()
+                allBindings.append(contentsOf: cache.bindings)
+                allInjections.append(contentsOf: cache.injections)
+                lock.unlock()
+                continue
+            }
+            
+            group.enter()
+            queue.async {
+                defer { group.leave() }
+                
+                do {
+                    let sourceFile = try String(contentsOfFile: fullPath, encoding: .utf8)
+                    let syntax = Parser.parse(source: sourceFile)
+                    let visitor = DependencyVisitor()
+                    visitor.setFileName(fullPath)
+                    visitor.walk(syntax)
+                    
+                    // Update cache
+                    cacheManager.updateCache(for: fullPath, bindings: visitor.bindings, injections: visitor.injections)
+                    
+                    lock.lock()
+                    allBindings.append(contentsOf: visitor.bindings)
+                    allInjections.append(contentsOf: visitor.injections)
+                    lock.unlock()
+                } catch {
+                    print("Error processing file \(fullPath): \(error)")
+                }
+            }
         }
     }
-
-    // Removes identical duplicates of binding
-    let bindings = Set<Binding>(visitor.bindings)
-
-    return (.init(bindings), visitor.injections)
+    
+    group.wait()
+    
+    // Save cache after all files are processed
+    cacheManager.flush()
+    
+    // Remove duplicates
+    let bindings = Set<Binding>(allBindings)
+    return (.init(bindings), allInjections)
 }
 
 /// Validate that all injected dependencies have a corresponding binding

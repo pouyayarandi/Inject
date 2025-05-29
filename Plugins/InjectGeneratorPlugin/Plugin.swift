@@ -33,7 +33,7 @@ private func findSwiftFiles(in directory: URL) throws -> [URL] {
     let fileManager = FileManager.default
     var swiftFiles: [URL] = []
     
-    if let enumerator = fileManager.enumerator(at: directory, includingPropertiesForKeys: [.isRegularFileKey], options: [.skipsHiddenFiles, .skipsPackageDescendants]) {
+    if let enumerator = fileManager.enumerator(at: directory, includingPropertiesForKeys: [.isRegularFileKey, .modificationDateKey], options: [.skipsHiddenFiles, .skipsPackageDescendants]) {
         for case let fileURL as URL in enumerator {
             if fileURL.pathExtension == "swift" {
                 swiftFiles.append(fileURL)
@@ -58,7 +58,9 @@ struct InjectGeneratorPlugin: BuildToolPlugin {
         let outputFileURL = outputDirURL.appendingPathComponent("Container+Generated.swift")
         
         // Get target source files as URLs
-        var sourceFileURLs = target.sourceModule?.sourceFiles.map(\.url) ?? []
+        var sourceFileURLs = target.sourceModule?.sourceFiles
+            .filter { $0.type == .source && $0.url.pathExtension == "swift" }
+            .map(\.url) ?? []
         
         // Read paths from Includefile and append additional source files
         let targetDirectoryURL = URL(fileURLWithPath: target.directory.string)
@@ -70,21 +72,22 @@ struct InjectGeneratorPlugin: BuildToolPlugin {
         
         // Read imports from Importfile
         let imports = readImportfile(workingDirectory: targetDirectoryURL)
-
+        
+        // Get unique source directories
         let sourceDirURLs = Set(sourceFileURLs.map { $0.deletingLastPathComponent() })
-
+        
         // Build the arguments dynamically
         var arguments: [String] = [
             "--source-dirs", sourceDirURLs.map(\.path).joined(separator: ","),
-            "--output", outputFileURL.path // Use URL path string for argument
+            "--output", outputFileURL.path
         ]
-
+        
         // Only add the imports flag if there are actually imports
         if !imports.isEmpty {
             arguments.append("--imports")
             arguments.append(imports.joined(separator: ","))
         }
-
+        
         // Create the command using URLs
         return [
             .buildCommand(
@@ -118,7 +121,7 @@ extension InjectGeneratorPlugin: XcodeBuildToolPlugin {
             .filter { $0.type == .source && $0.url.pathExtension == "swift" }
             .map(\.url)
         
-        // Read paths from Injectfile and append additional source files
+        // Read paths from Includefile and append additional source files
         let projectDirectoryURL = context.xcodeProject.directoryURL
         let includePaths = readIncludefile(workingDirectory: projectDirectoryURL)
         for relativePath in includePaths {
@@ -129,20 +132,21 @@ extension InjectGeneratorPlugin: XcodeBuildToolPlugin {
         // Read imports from Importfile
         let imports = readImportfile(workingDirectory: projectDirectoryURL)
         
+        // Get unique source directories
         let sourceDirURLs = Set(sourceFileURLs.map { $0.deletingLastPathComponent() })
-
+        
         // Build the arguments dynamically
         var arguments: [String] = [
             "--source-dirs", sourceDirURLs.map(\.path).joined(separator: ","),
-            "--output", outputFileURL.path // Use URL path string for argument
+            "--output", outputFileURL.path
         ]
-
+        
         // Only add the imports flag if there are actually imports
         if !imports.isEmpty {
             arguments.append("--imports")
             arguments.append(imports.joined(separator: ","))
         }
-
+        
         // Create the command using URLs
         return [
             .buildCommand(

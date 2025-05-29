@@ -4,7 +4,7 @@ import SwiftSyntax
 // Models for dependency information
 
 /// Represents a location in source code
-public struct SourceLocation: Hashable, CustomStringConvertible {
+public struct SourceLocation: Hashable, CustomStringConvertible, Codable {
     public let line: Int
     public let column: Int
     public let offset: Int
@@ -23,7 +23,7 @@ public struct SourceLocation: Hashable, CustomStringConvertible {
 }
 
 /// Represents a binding between a type and its implementation
-public struct Binding: Hashable {
+public struct Binding: Hashable, Codable {
     public let type: String
     public let implementation: String
     public let location: SourceLocation
@@ -38,7 +38,7 @@ public struct Binding: Hashable {
 }
 
 /// Represents a dependency that is injected into a class
-public struct InjectedDependency {
+public struct InjectedDependency: Codable {
     public let type: String
     public let location: SourceLocation
     
